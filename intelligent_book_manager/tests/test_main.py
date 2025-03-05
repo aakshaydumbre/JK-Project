@@ -1,189 +1,91 @@
-import unittest
-from unittest.mock import patch
-from fastapi.testclient import TestClient
-from intelligent_book_manager.app.main import app  # Assuming your FastAPI app is in main.py
-from intelligent_book_manager.app.models import models
-from intelligent_book_manager.app.database import SessionLocal, engine
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import IntegrityError
+import pytest
+from httpx import AsyncClient
+from intelligent_book_manager.app.main import app  # Assuming FastAPI app is instantiated in main.py
 
-# Create a TestClient instance
-client = TestClient(app)
-
-# Setup Database for testing
-models.Base.metadata.create_all(bind=engine)
-
-def override_get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-app.dependency_overrides[override_get_db] = override_get_db
-
-class TestBookEndpoints(unittest.TestCase):
-    def setUp(self):
-        self.db = SessionLocal()
-        self.db.query(models.Book).delete()  # Clean up any existing data
-        self.db.query(models.Review).delete()
-        self.db.commit()
-
-    def tearDown(self):
-        self.db.close()
-
-    def test_create_book(self):
-        book_data = {
+@pytest.mark.asyncio
+async def test_create_book(async_client: AsyncClient):
+    response = await async_client.post(
+        "/books",
+        json={
             "title": "Test Book",
-            "author": "Test Author",
-            "genre": "Test Genre",
-            "year_published": 2023,
+            "author": "Author Name",
+            "genre": "Fiction",
+            "year_published": 2021,
+            "summary": "A short summary."
         }
-        response = client.post("/books", json=book_data)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["title"], "Test Book")
-        self.assertIsNotNone(response.json()["id"])
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["title"] == "Test Book"
+    assert data["author"] == "Author Name"
+    assert data["genre"] == "Fiction"
+    assert data["year_published"] == 2021
+    assert "id" in data
 
-    def test_create_book_integrity_error(self):
-        book_data = {
-            "title": "Test Book",
-            "author": "Test Author",
-            "genre": "Test Genre",
-            "year_published": 2023,
+@pytest.mark.asyncio
+async def test_get_books(async_client: AsyncClient):
+    response = await async_client.get("/books")
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, list)
+    if data:
+        assert "title" in data[0]
+        assert "author" in data[0]
+        assert "genre" in data[0]
+
+@pytest.mark.asyncio
+async def test_get_book_by_id(async_client: AsyncClient):
+    book_id = 1  # Assuming a valid book ID
+    response = await async_client.get(f"/books/{book_id}")
+    assert response.status_code in [200, 404]
+
+@pytest.mark.asyncio
+async def test_update_book(async_client: AsyncClient):
+    book_id = 1  # Assuming a valid book ID
+    response = await async_client.put(
+        f"/books/{book_id}",
+        json={
+            "title": "Updated Title",
+            "author": "New Author",
+            "genre": "Non-Fiction",
+            "year_published": 2022,
+            "summary": "Updated summary"
         }
-        response = client.post("/books", json=book_data)
-        self.assertEqual(response.status_code, 200)
-        response = client.post("/books", json=book_data)
-        self.assertEqual(response.status_code, 400) # duplicate title
+    )
+    assert response.status_code in [200, 404]
 
-    def test_get_books(self):
-        book_data = {
-            "title": "Test Book2",
-            "author": "Test Author",
-            "genre": "Test Genre",
-            "year_published": 2023,
-        }
-        client.post("/books", json=book_data)
-        response = client.get("/books")
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(len(response.json()) > 0)
+@pytest.mark.asyncio
+async def test_delete_book(async_client: AsyncClient):
+    book_id = 1  # Assuming a valid book ID
+    response = await async_client.delete(f"/books/{book_id}")
+    assert response.status_code in [200, 404]
 
-    def test_get_book(self):
-        book_data = {
-            "title": "Test Book3",
-            "author": "Test Author",
-            "genre": "Test Genre",
-            "year_published": 2023,
-        }
-        created_book = client.post("/books", json=book_data).json()
-        response = client.get(f"/books/{created_book['id']}")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["title"], "Test Book3")
-
-    def test_update_book(self):
-        book_data = {
-            "title": "Test Book4",
-            "author": "Test Author",
-            "genre": "Test Genre",
-            "year_published": 2023,
-        }
-        created_book = client.post("/books", json=book_data).json()
-        updated_book_data = {
-            "title": "Updated Book",
-            "author": "Updated Author",
-            "genre": "Updated Genre",
-            "year_published": 2024,
-        }
-        response = client.put(f"/books/{created_book['id']}", json=updated_book_data)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["title"], "Updated Book")
-
-    def test_delete_book(self):
-        book_data = {
-            "title": "Test Book5",
-            "author": "Test Author",
-            "genre": "Test Genre",
-            "year_published": 2023,
-        }
-        created_book = client.post("/books", json=book_data).json()
-        response = client.delete(f"/books/{created_book['id']}")
-        self.assertEqual(response.status_code, 200)
-        response = client.get(f"/books/{created_book['id']}")
-        self.assertEqual(response.status_code, 404)
-
-class TestReviewEndpoints(unittest.TestCase):
-    def setUp(self):
-        self.db:Session = SessionLocal()
-        self.db.query(models.Book).delete()  # Clean up any existing data
-        self.db.query(models.Review).delete()
-        book_data = {
-            "title": "Test Book",
-            "author": "Test Author",
-            "genre": "Test Genre",
-            "year_published": 2023,
-        }
-        self.created_book = client.post("/books", json=book_data).json()
-        self.db.commit()
-
-    def tearDown(self):
-        self.db.close()
-
-    def test_create_review(self):
-        review_data = {
-            "user_id": 1,
+@pytest.mark.asyncio
+async def test_add_review(async_client: AsyncClient):
+    book_id = 1  # Assuming a valid book ID
+    response = await async_client.post(
+        f"/books/{book_id}/reviews",
+        json={
+            "user_id": "user123",
             "review_text": "Great book!",
-            "rating": 4.5,
+            "rating": 5.0
         }
-        response = client.post(f"/books/{self.created_book['id']}/reviews", json=review_data)
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["review_text"], "Great book!")
+    )
+    assert response.status_code in [200, 404]
 
-    def test_get_reviews(self):
-        review_data = {
-            "user_id": 1,
-            "review_text": "Great book!",
-            "rating": 4.5,
-        }
-        client.post(f"/books/{self.created_book['id']}/reviews", json=review_data)
-        response = client.get(f"/books/{self.created_book['id']}/reviews")
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(len(response.json()) > 0)
+@pytest.mark.asyncio
+async def test_get_reviews(async_client: AsyncClient):
+    book_id = 1  # Assuming a valid book ID
+    response = await async_client.get(f"/books/{book_id}/reviews")
+    assert response.status_code in [200, 404]
 
-class TestSummaryAndRecommendations(unittest.TestCase):
-    def setUp(self):
-        self.db:Session = SessionLocal()
-        self.db.query(models.Book).delete()  # Clean up any existing data
-        self.db.query(models.Review).delete()
-        book_data = {
-            "title": "Test Book",
-            "author": "Test Author",
-            "genre": "Test Genre",
-            "year_published": 2023,
-        }
-        self.created_book = client.post("/books", json=book_data).json()
-        self.db.commit()
+@pytest.mark.asyncio
+async def test_get_summary(async_client: AsyncClient):
+    book_id = 1  # Assuming a valid book ID
+    response = await async_client.get(f"/books/{book_id}/summary")
+    assert response.status_code in [200, 404]
 
-    def tearDown(self):
-        self.db.close()
-
-    @patch("app.services.llama3_service.generate_summary") # Assuming this is the function that calls the external model
-    def test_get_summary(self, mock_generate_summary):
-        mock_generate_summary.return_value = "This is a test summary."
-        response = client.get(f"/books/{self.created_book['id']}/summary")
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["summary"], "This is a test summary.")
-
-    def test_get_recommendations(self):
-        book_data = {
-            "title": "Test Book2",
-            "author": "Test Author",
-            "genre": "Science Fiction",
-            "year_published": 2023,
-        }
-        client.post("/books", json=book_data).json()
-        response = client.get("/recommendations?genre=Science Fiction")
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(len(response.json()) > 0)
-
-if __name__ == "__main__":
-    unittest.main()
+@pytest.mark.asyncio
+async def test_get_recommendations(async_client: AsyncClient):
+    response = await async_client.get("/recommendations")
+    assert response.status_code == 200

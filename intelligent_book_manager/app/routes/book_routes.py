@@ -44,19 +44,10 @@ async def create_book(book: BookCreate, db: AsyncSession = Depends(get_db)):
     await db.refresh(new_book)
     return new_book
 
-@router.get("/books", response_model=List[BookResponse])   #old running code, below one is added while writing tests
+@router.get("/books", response_model=List[BookResponse])
 async def get_books(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Book))
     return result.scalars().all()
-
-
-# @router.get("/books", response_model=List[BookResponse])
-# async def get_books(
-#     mocker: Optional[str] = Query(None),  # Make mocker optional
-#     db: AsyncSession = Depends(get_db)
-# ):
-#     result = await db.execute(select(Book))
-#     return result.scalars().all()
 
 @router.get("/books/{book_id}", response_model=BookResponse)
 async def get_book(book_id: int, db: AsyncSession = Depends(get_db)):
