@@ -1,0 +1,49 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: postgres_container
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: Sonyvaio$29
+      POSTGRES_DB: bookdb
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+
+  fastapi:
+    build: .
+    container_name: fastapi_container
+    restart: always
+    depends_on:
+      - postgres
+      - ollama  # ✅ Make sure ollama is defined below
+    environment:
+      DATABASE_URL: postgresql+asyncpg://postgres:Sonyvaio$29@postgres:5432/bookdb
+    ports:
+      - "8000:8000"
+    networks:
+      - app_network
+
+  ollama:  # ✅ Make sure this section exists
+    build:
+      context: .
+      dockerfile: Dockerfile.llama3
+    container_name: ollama_container
+    restart: always
+    environment:
+      - OLLAMA_HOST=0.0.0.0:11434
+    ports:
+      - "11434:11434"
+    networks:
+      - app_network
+
+volumes:
+  postgres_data:
+
+networks:
+  app_network:
+    driver: bridge

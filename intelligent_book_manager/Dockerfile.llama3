@@ -1,0 +1,14 @@
+# Use a minimal Ubuntu base image
+FROM ubuntu:20.04
+
+# Install necessary dependencies
+RUN apt update && apt install -y curl && \
+    curl -fsSL https://ollama.com/install.sh | sh
+
+# Expose the Ollama API port
+EXPOSE 11434
+
+ENV OLLAMA_HOST=0.0.0.0:11434
+
+# Start Ollama service
+CMD ["ollama", "serve"]
