@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+
+from intelligent_book_manager.app.services.auth import get_current_user
 from intelligent_book_manager.app.database import get_db
 from intelligent_book_manager.app.models.models import Book, Review
 from pydantic import BaseModel
@@ -45,7 +47,9 @@ async def create_book(book: BookCreate, db: AsyncSession = Depends(get_db)):
     return new_book
 
 @router.get("/books", response_model=List[BookResponse])
-async def get_books(db: AsyncSession = Depends(get_db)):
+async def get_books(
+    db: AsyncSession = Depends(get_db),
+    current_user: dict = Depends(get_current_user)):
     result = await db.execute(select(Book))
     return result.scalars().all()
 

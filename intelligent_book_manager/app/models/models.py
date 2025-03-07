@@ -1,6 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Float
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
+from intelligent_book_manager.app.database import Base
 
 Base = declarative_base()
 
@@ -26,3 +27,13 @@ class Review(Base):
     rating = Column(Float, nullable=False)
 
     book = relationship("Book", back_populates="reviews")
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True)
+    full_name = Column(String)
+    email = Column(String, unique=True)
+    hashed_password = Column(String)

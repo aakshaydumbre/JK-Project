@@ -11,3 +11,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine, clas
 async def get_db():
     async with SessionLocal() as session:
         yield session
+
+
+class Base:
+    pass

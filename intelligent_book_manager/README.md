@@ -14,7 +14,7 @@
 1.  **Clone the repository:**
 
     ```bash
-    git clone <repository_url>
+    git clone https://github.com/aakshaydumbre/JK-Project.git
     cd intelligent_book_manager
     ```
 
@@ -36,7 +36,7 @@
 
     -   Ensure you have PostgreSQL installed and running.
     -   Create a database named `bookdb` (or whatever you've configured in `config/settings.py`).
-    - Set up the DATABASE_URL in your .env file or in the config file. Example: `DATABASE_URL = "postgresql+asyncpg://postgres:Sonyvaio$29@localhost:5432/bookdb"`
+    - Set up the DATABASE_URL in your .env file or in the config file. Example: `DATABASE_URL = "postgresql+asyncpg://postgres:password@localhost:5432/bookdb"`
 
 5. **Add environment variables**
     - create a .env file in the root directory and add environment variables
@@ -44,7 +44,7 @@
 6.  **Run the Application:**
 
     ```bash
-    uvicorn app.main:app --reload
+    uvicorn intelligent_book_manager.app.main:app --reload
     ```
 
     -   This will start the FastAPI server. You can access the API documentation at `http://127.0.0.1:8000/docs` (or the relevant address)
@@ -61,7 +61,8 @@
             "title": "The Hitchhiker's Guide to the Galaxy",
             "author": "Douglas Adams",
             "genre": "Science Fiction",
-            "year_published": 1979
+            "year_published": 1979,
+            "summary": "A novel about racial injustice in the Deep South, seen through the eyes of young Scout Finch."
         }
         ```
     - Response Body:
@@ -72,7 +73,7 @@
             "author": "Douglas Adams",
             "genre": "Science Fiction",
             "year_published": 1979,
-            "summary": null
+            "summary": "A novel about racial injustice in the Deep South, seen through the eyes of young Scout Finch."
         }
         ```
 -   **`GET /books`**
@@ -152,7 +153,7 @@
 1.  **Build the Docker image:**
 
     ```bash
-    docker build -t intelligent-book-manager .
+    docker build -t intelligent-book-manager
     ```
 
 2.  **Run the Docker container:**
@@ -166,7 +167,15 @@
 -   We have included a sample test file.
 -   To execute the unit tests:
     ```bash
-    pytest
+    pytest -vv tests/test_main.py::test_create_book && sleep 1 \
+    && pytest -vv tests/test_main.py::test_update_book && sleep 1 \
+    && pytest -vv tests/test_main.py::test_get_books && sleep 1 \
+    && pytest -vv tests/test_main.py::test_get_book_by_id && sleep 1 \
+    && pytest -vv tests/test_main.py::test_delete_book && sleep 1 \
+    && pytest -vv tests/test_main.py::test_add_review && sleep 1 \
+    && pytest -vv tests/test_main.py::test_get_reviews && sleep 1 \
+    && pytest -vv tests/test_main.py::test_get_summary && sleep 1 \
+    && pytest -vv tests/test_main.py::test_get_recommendations
     ```
 
 ## Deployment
