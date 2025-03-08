@@ -8,19 +8,15 @@ from passlib.context import CryptContext
 from dotenv import load_dotenv
 import os
 
-# Load environment variables
 load_dotenv()
 
-# Secure secret key for JWT
 SECRET_KEY = os.getenv("SECRET_KEY", "fallback_secret_key_if_missing")  # Store securely in .env
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-# Secure password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="get_token")  # 👈 Token endpoint
 
-# Sample in-memory user store (Replace with DB)
 fake_users_db = {
     "testuser": {
         "username": "testuser",
@@ -49,9 +45,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 async def get_current_user(token: str = Security(oauth2_scheme)):
-    """
-    Validate JWT token from headers.
-    """
+
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")

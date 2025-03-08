@@ -2,7 +2,6 @@ import torch
 from transformers import pipeline
 
 try:
-    # ✅ Load the summarization pipeline
     summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
 except Exception as e:
     summarizer = None
@@ -31,7 +30,6 @@ def generate_review_summary(reviews: list) -> str:
     combined_reviews = " ".join(reviews)
     return generate_summary(combined_reviews)
 
-# ✅ Test function
 if __name__ == "__main__":
     summary = generate_summary("The Alchemist is about a young shepherd following his dreams.")
     print("Generated Summary:", summary)

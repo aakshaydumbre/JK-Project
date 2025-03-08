@@ -1,6 +1,6 @@
 import pytest
 from httpx import AsyncClient
-from intelligent_book_manager.app.main import app  # Assuming FastAPI app is instantiated in main.py
+from intelligent_book_manager.app.main import app
 
 @pytest.mark.asyncio
 async def test_create_book(async_client: AsyncClient):
@@ -41,7 +41,7 @@ async def test_get_book_by_id(async_client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_update_book(async_client: AsyncClient):
-    book_id = 1  # Assuming a valid book ID
+    book_id = 1
     response = await async_client.put(
         f"/books/{book_id}",
         json={
@@ -56,13 +56,13 @@ async def test_update_book(async_client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_delete_book(async_client: AsyncClient):
-    book_id = 1  # Assuming a valid book ID
+    book_id = 1
     response = await async_client.delete(f"/books/{book_id}")
     assert response.status_code in [200, 404]
 
 @pytest.mark.asyncio
 async def test_add_review(async_client: AsyncClient):
-    book_id = 1  # Assuming a valid book ID
+    book_id = 1
     response = await async_client.post(
         f"/books/{book_id}/reviews",
         json={
@@ -75,13 +75,13 @@ async def test_add_review(async_client: AsyncClient):
 
 @pytest.mark.asyncio
 async def test_get_reviews(async_client: AsyncClient):
-    book_id = 1  # Assuming a valid book ID
+    book_id = 1
     response = await async_client.get(f"/books/{book_id}/reviews")
     assert response.status_code in [200, 404]
 
 @pytest.mark.asyncio
 async def test_get_summary(async_client: AsyncClient):
-    book_id = 1  # Assuming a valid book ID
+    book_id = 1
     response = await async_client.get(f"/books/{book_id}/summary")
     assert response.status_code in [200, 404]
 

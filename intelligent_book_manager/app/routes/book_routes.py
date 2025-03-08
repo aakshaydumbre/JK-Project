@@ -15,7 +15,6 @@ from collections import defaultdict
 
 router = APIRouter()
 
-# Pydantic models for request validation
 class BookCreate(BaseModel):
     title: str
     author: str
@@ -35,7 +34,6 @@ class ReviewCreate(BaseModel):
 class ReviewResponse(ReviewCreate):
     book_id: int
 
-# Async CRUD Endpoints
 
 @router.post("/books", response_model=BookResponse)
 async def create_book(book: BookCreate, db: AsyncSession = Depends(get_db)):
@@ -101,9 +99,6 @@ async def add_review(book_id: int, review: ReviewCreate, db: AsyncSession = Depe
 
 @router.get("/books/{book_id}/reviews", response_model=List[ReviewResponse])
 async def get_reviews(book_id: int, db: AsyncSession = Depends(get_db)):
-    """
-    Fetch all reviews for a specific book.
-    """
     result = await db.execute(select(Review).filter(Review.book_id == book_id))
     reviews = result.scalars().all()
 
@@ -129,9 +124,6 @@ async def get_book_summary(book_id: int, db: AsyncSession = Depends(get_db)):
 
 @router.get("/recommendations")
 async def get_recommendations(db: AsyncSession = Depends(get_db)):
-    """
-    Asynchronous book recommendation API based on genre.
-    """
     result = await db.execute(select(Book))
     books = result.scalars().all()
 
